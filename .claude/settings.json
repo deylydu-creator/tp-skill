@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -Rs '{hookSpecificOutput: {hookEventName: \"SessionStart\", additionalContext: (\"Der folgende Transfer Pricing Compliance Skill ist für diese Session aktiv:\\n\\n\" + .)}}' .claude/skills/managing-transfer-pricing-compliance.md",
+            "statusMessage": "Transfer Pricing Skill wird geladen..."
+          }
+        ]
+      }
+    ]
+  }
+}
