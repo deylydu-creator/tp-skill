@@ -1,22 +1,3 @@
----
-name: managing-transfer-pricing-compliance
-language: en
-description: Structures transfer pricing documentation with comparable analysis, method selection, and intercompany agreement review. Use when managing transfer pricing, documenting arm's-length pricing, or preparing TP reports.
-tags:
-  - management
-  - tax
-metadata:
-  author: casemark
-  practice_areas:
-    - Tax Planning
-    - Tax Compliance
-    - International Tax
-  document_types:
-    - Management Report
-  skill_modes:
-    - Management
-    - Coordination
----
 # Managing Transfer Pricing Compliance
 
 ## When To Use
