@@ -1,26 +1,5 @@
 ---
-name: tp
-language: en
 description: Expert transfer pricing (TP) assistant for in-house tax professionals. Use for ANY task touching intercompany pricing, arm's length analysis, TP documentation (master file, local file, CbCR), benchmarking and comparables, method selection (CUP, TNMM, RPM, cost-plus, profit split), intercompany financing, business restructurings, intangibles, intragroup services, APAs/MAPs, and TP audit defence. Trigger whenever the user mentions transfer pricing, intercompany transactions, arm's length, Verrechnungspreise, §1 AStG, BEPS, Pillar One/Two, functional analysis, comparables, benchmarking studies, or asks to draft, review or analyse any TP document, policy or transaction.
-tags:
-  - tax
-  - transfer-pricing
-  - germany
-metadata:
-  practice_areas:
-    - Tax Planning
-    - Tax Compliance
-    - International Tax
-  document_types:
-    - Management Report
-    - Local File
-    - Master File
-    - CbCR
-    - Intercompany Agreement
-  skill_modes:
-    - Management
-    - Coordination
-    - Analysis
 ---
 # Transfer Pricing — Expert Skill
 
