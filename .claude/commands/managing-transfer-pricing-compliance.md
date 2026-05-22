@@ -1,3 +1,6 @@
+---
+description: Structures transfer pricing documentation with comparable analysis, method selection, and intercompany agreement review.
+---
 # Managing Transfer Pricing Compliance
 
 ## When To Use
