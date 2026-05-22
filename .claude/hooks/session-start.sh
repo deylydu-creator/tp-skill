@@ -1,50 +1,56 @@
 #!/bin/bash
+# SessionStart hook: exits immediately, spawns a detached background worker.
+# The worker recreates skill/command files AFTER the file watcher has started,
+# so the watcher sees genuine file-created events and registers the commands.
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 LOG="$PROJECT_DIR/.claude/hook-debug.log"
 
 {
   echo "=== SessionStart: $(date) ==="
-  echo "PROJECT_DIR: $PROJECT_DIR"
   echo "CLAUDE_CODE_REMOTE: ${CLAUDE_CODE_REMOTE:-not set}"
-  echo "Git log:"
-  git -C "$PROJECT_DIR" log --oneline -3 2>&1 || echo "(git log failed)"
-  echo "Files:"
-  find "$PROJECT_DIR/.claude" -type f 2>&1 || echo "(find failed)"
+  git -C "$PROJECT_DIR" log --oneline -2 2>&1 || true
 } >> "$LOG"
 
-# Give the file watcher time to initialize
-sleep 8
+# Write the worker to a temp file so it can be run in a new process session.
+TMPSCRIPT=$(mktemp /tmp/tp-skill-worker.XXXXXX.sh)
+chmod +x "$TMPSCRIPT"
 
-recreate_file() {
-  local file="$1"
-  local pass="$2"
-  [ -f "$file" ] || return
-  local tmp
-  tmp=$(mktemp)
-  cp "$file" "$tmp"
-  rm -f "$file"
-  cat "$tmp" > "$file"
-  rm -f "$tmp"
-  echo "Recreated (pass $pass): $file at $(date)" >> "$LOG"
+# Variables are expanded NOW (outer shell) so the worker needs no env inheritance.
+cat > "$TMPSCRIPT" << WORKERSCRIPT
+#!/bin/bash
+LOG="$LOG"
+PROJ="$PROJECT_DIR"
+SELF="$TMPSCRIPT"
+
+recreate() {
+  local pass=\$1 n=0 f tmp
+  for f in "\$PROJ"/.claude/skills/*/SKILL.md "\$PROJ"/.claude/commands/*.md; do
+    [ -f "\$f" ] || continue
+    tmp=\$(mktemp)
+    cp "\$f" "\$tmp" && rm -f "\$f" && cat "\$tmp" > "\$f" && rm -f "\$tmp"
+    echo "  Recreated: \$f" >> "\$LOG"
+    n=\$((n+1))
+  done
+  echo "Pass \$pass done (\$n files) at \$(date)" >> "\$LOG"
 }
 
-# Pass 1: rm + cat > triggers IN_CREATE + IN_CLOSE_WRITE events
-for skill_md in "$PROJECT_DIR"/.claude/skills/*/SKILL.md; do
-  recreate_file "$skill_md" 1
-done
-for cmd_md in "$PROJECT_DIR"/.claude/commands/*.md; do
-  recreate_file "$cmd_md" 1
-done
+# Three passes at increasing delays to survive any watcher startup timing.
+sleep 5  && echo "--- pass 1 ---" >> "\$LOG" && recreate 1
+sleep 10 && echo "--- pass 2 ---" >> "\$LOG" && recreate 2
+sleep 15 && echo "--- pass 3 ---" >> "\$LOG" && recreate 3
 
-# Pass 2: repeat after a short delay in case the watcher hadn't registered the first pass yet
-sleep 4
+echo "Worker done: \$(date)" >> "\$LOG"
+rm -f "\$SELF"
+WORKERSCRIPT
 
-for skill_md in "$PROJECT_DIR"/.claude/skills/*/SKILL.md; do
-  recreate_file "$skill_md" 2
-done
-for cmd_md in "$PROJECT_DIR"/.claude/commands/*.md; do
-  recreate_file "$cmd_md" 2
-done
+# setsid puts the worker in a new session/process-group so it survives
+# after this hook exits (even if Claude Code kills the hook's process group).
+if command -v setsid > /dev/null 2>&1; then
+  setsid bash "$TMPSCRIPT" >> "$LOG" 2>&1 &
+else
+  nohup bash "$TMPSCRIPT" >> "$LOG" 2>&1 &
+  disown $!
+fi
 
-echo "Hook complete: $(date)" >> "$LOG"
+echo "Hook complete, worker spawned (PID $!): $(date)" >> "$LOG"
